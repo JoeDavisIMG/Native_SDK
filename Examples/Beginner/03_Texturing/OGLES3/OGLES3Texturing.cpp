@@ -236,17 +236,21 @@ bool OGLES3Texturing::InitView()
 	// Binds this texture handle so we can load the data into it
 	glBindTexture(GL_TEXTURE_2D, m_uiTexture);
 
-	/*
-		PBO stuff
+	/*	---------
+		PBO write
+		---------
+		Map a GL allocated buffer, write the proceedural texture straight into it.
+		Without the PBO, glTexImage2D() has to memcpy() from the application allocated pTexData
+		to a driver allocated buffer, wasting CPU cycles and bandwidth
 	*/
-#define USE_PBO
+#define PBO_WRITE
 	GLuint* pTexData(nullptr);
-#ifdef USE_PBO
+#ifdef PBO_WRITE
 	GLuint pbo;
 	glGenBuffers(1, &pbo);
 	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);
 	const GLuint buffer_size(TEX_SIZE*TEX_SIZE * 4);
-	glBufferData(GL_PIXEL_UNPACK_BUFFER, buffer_size, 0, GL_STREAM_DRAW);
+	glBufferData(GL_PIXEL_UNPACK_BUFFER, buffer_size, 0, GL_STATIC_DRAW);
 	pTexData = (GLuint*)glMapBufferRange(GL_PIXEL_UNPACK_BUFFER, 0, buffer_size, GL_MAP_WRITE_BIT);
 #else
 	// Creates the data as a 32bits integer array (8bits per component)
@@ -261,7 +265,7 @@ bool OGLES3Texturing::InitView()
 		if ( ((i*j)/8) % 2 ) col = (GLuint) (255<<24) + (255<<16) + (0<<8) + (255);
 		pTexData[j*TEX_SIZE+i] = col;
 	}
-#ifdef USE_PBO
+#ifdef PBO_WRITE
 	GLboolean unmap_error = glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
 	pTexData = nullptr;
 	if (unmap_error == GL_FALSE) printf("glUnmapBuffer failed!\n");
