@@ -236,8 +236,23 @@ bool OGLES3Texturing::InitView()
 	// Binds this texture handle so we can load the data into it
 	glBindTexture(GL_TEXTURE_2D, m_uiTexture);
 
+	/*
+		PBO stuff
+	*/
+#define USE_PBO
+	GLuint* pTexData(nullptr);
+#ifdef USE_PBO
+	GLuint pbo;
+	glGenBuffers(1, &pbo);
+	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);
+	const GLuint buffer_size(TEX_SIZE*TEX_SIZE * 4);
+	glBufferData(GL_PIXEL_UNPACK_BUFFER, buffer_size, 0, GL_STREAM_DRAW);
+	pTexData = (GLuint*)glMapBufferRange(GL_PIXEL_UNPACK_BUFFER, 0, buffer_size, GL_MAP_WRITE_BIT);
+#else
 	// Creates the data as a 32bits integer array (8bits per component)
-	GLuint* pTexData = new GLuint[TEX_SIZE*TEX_SIZE];
+	pTexData = new GLuint[TEX_SIZE*TEX_SIZE];
+#endif
+
 	for (int i=0; i<TEX_SIZE; i++)
 	for (int j=0; j<TEX_SIZE; j++)
 	{
@@ -246,48 +261,19 @@ bool OGLES3Texturing::InitView()
 		if ( ((i*j)/8) % 2 ) col = (GLuint) (255<<24) + (255<<16) + (0<<8) + (255);
 		pTexData[j*TEX_SIZE+i] = col;
 	}
-
-	/*
-		glTexImage2D loads the texture data into the texture object.
-		void glTexImage2D( GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height,
-						   GLint border, GLenum format, GLenum type, const GLvoid *pixels );
-		target must be GL_TEXTURE_2D.
-		level specify the mipmap level we want to upload.
-		internalformat and format must be the same. Here we use GL_RGBA for 4 component colors (r,g,b,a).
-		  We could use GL_RGB, GL_ALPHA, GL_LUMINANCE, GL_LUMINANCE_ALPHA to use different color component combinations.
-		width, height specify the size of the texture. Both of the dimensions must be power of 2.
-		border must be 0.
-		type specify the format of the data. We use GL_UNSIGNED_BYTE to describe a color component as an unsigned byte.
-		  So a pixel is described by a 32bits integer.
-		  We could also use GL_UNSIGNED_SHORT_5_6_5, GL_UNSIGNED_SHORT_4_4_4_4, and GL_UNSIGNED_SHORT_5_5_5_1
-		  to specify the size of all 3 (or 4) color components. If we used any of these 3 constants,
-		  a pixel would then be described by a 16bits integer.
-	*/
+#ifdef USE_PBO
+	GLboolean unmap_error = glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
+	pTexData = nullptr;
+	if (unmap_error == GL_FALSE) printf("glUnmapBuffer failed!\n");
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TEX_SIZE, TEX_SIZE, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+#else
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TEX_SIZE, TEX_SIZE, 0, GL_RGBA, GL_UNSIGNED_BYTE, pTexData);
-
-	/*
-		glTexParameterf is used to set the texture parameters
-		void glTexParameterf(GLenum target, GLenum pname, GLfloat param);
-		target must be GL_TEXTURE_2D.
-		pname is the parameter name we want to modify.
-		  If pname is GL_TEXTURE_MIN_FILTER, param is used to set the way the texture is rendered when made smaller.
-		  We can tell OpenGL to interpolate between the pixels in a mipmap level but also between different mipmap levels.
-		  We are not using mipmap interpolation here because we didn't defined the mipmap levels of our texture.
-
-		  If pname is GL_TEXTURE_MAG_FILTER, param is used to set the way the texture is rendered when made bigger.
-		  Here we can only tell OpenGL to interpolate between the pixels of the first mipmap level.
-
-		  if pname is GL_TEXTURE_WRAP_S or GL_TEXTURE_WRAP_T, then param sets the way a texture tiles in both directions.
-		  The default if GL_REPEAT to wrap the texture (repeat it). We could also set it to GL_CLAMP or GL_CLAMP_TO_EDGE
-		  to clamp the texture.
-
-		  On OpenGL ES 1.1 and 2.0, if pname is GL_GENERATE_MIPMAP, param tells OpenGL to create mipmap levels automatically.
-	*/
+	// Deletes the texture data, it's now in OpenGL memory
+	delete[] pTexData;
+#endif
+	
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-
-	// Deletes the texture data, it's now in OpenGL memory
-	delete [] pTexData;
 
 	// Create VBO for the triangle from our data
 
