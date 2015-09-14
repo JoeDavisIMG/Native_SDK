@@ -235,6 +235,7 @@ bool OGLES3Texturing::InitView()
 
 	// Binds this texture handle so we can load the data into it
 	glBindTexture(GL_TEXTURE_2D, m_uiTexture);
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA, TEX_SIZE, TEX_SIZE);
 
 	/*	---------
 		PBO write
@@ -269,9 +270,9 @@ bool OGLES3Texturing::InitView()
 	GLboolean unmap_error = glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
 	pTexData = NULL;
 	if (unmap_error == GL_FALSE) printf("glUnmapBuffer failed!\n");
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TEX_SIZE, TEX_SIZE, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, TEX_SIZE, TEX_SIZE, GL_RGBA, GL_UNSIGNED_BYTE, 0);
 #else
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TEX_SIZE, TEX_SIZE, 0, GL_RGBA, GL_UNSIGNED_BYTE, pTexData);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, TEX_SIZE, TEX_SIZE, GL_RGBA, GL_UNSIGNED_BYTE, pTexData);
 	// Deletes the texture data, it's now in OpenGL memory
 	delete[] pTexData;
 #endif
