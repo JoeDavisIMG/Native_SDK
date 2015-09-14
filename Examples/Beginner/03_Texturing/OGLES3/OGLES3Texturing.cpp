@@ -244,14 +244,14 @@ bool OGLES3Texturing::InitView()
 		to a driver allocated buffer, wasting CPU cycles and bandwidth
 	*/
 #define PBO_WRITE
-	GLuint* pTexData(nullptr);
+	GLuint* pTexData(NULL);
 #ifdef PBO_WRITE
 	GLuint pbo;
 	glGenBuffers(1, &pbo);
 	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);
 	const GLuint buffer_size(TEX_SIZE*TEX_SIZE * 4);
 	glBufferData(GL_PIXEL_UNPACK_BUFFER, buffer_size, 0, GL_STATIC_DRAW);
-	pTexData = (GLuint*)glMapBufferRange(GL_PIXEL_UNPACK_BUFFER, 0, buffer_size, GL_MAP_WRITE_BIT);
+	pTexData = (GLuint*)glMapBufferRange(GL_PIXEL_UNPACK_BUFFER, 0, buffer_size, GL_MAP_WRITE_BIT|GL_MAP_INVALIDATE_BUFFER_BIT);
 #else
 	// Creates the data as a 32bits integer array (8bits per component)
 	pTexData = new GLuint[TEX_SIZE*TEX_SIZE];
@@ -267,7 +267,7 @@ bool OGLES3Texturing::InitView()
 	}
 #ifdef PBO_WRITE
 	GLboolean unmap_error = glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
-	pTexData = nullptr;
+	pTexData = NULL;
 	if (unmap_error == GL_FALSE) printf("glUnmapBuffer failed!\n");
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TEX_SIZE, TEX_SIZE, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
 #else
