@@ -235,7 +235,7 @@ bool OGLES3Texturing::InitView()
 
 	// Binds this texture handle so we can load the data into it
 	glBindTexture(GL_TEXTURE_2D, m_uiTexture);
-	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA, TEX_SIZE, TEX_SIZE);
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, TEX_SIZE, TEX_SIZE);
 
 	/*	---------
 		PBO write
