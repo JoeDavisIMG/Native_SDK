@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.3)
 
 ########## Variables ##########
-set(CMAKE_CURRENT_LIST_DIR ${CMAKE_CURRENT_LIST_DIR}/../)
-
 set(PVRTOOLS_BUILD_NAME "PVRTools")
 project(${PVRTOOLS_BUILD_NAME})
 
